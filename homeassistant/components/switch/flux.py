@@ -106,7 +106,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         flux.flux_update(fast=True)
 
     hass.services.register(DOMAIN, name + '_update', update)
-    hass.services.register(DOMAIN, name + 'fast_update', fast_update)
+    hass.services.register(DOMAIN, name + '_fast_update', fast_update)
 
 
 class FluxSwitch(SwitchDevice):
