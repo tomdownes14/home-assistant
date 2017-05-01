@@ -59,24 +59,24 @@ PLATFORM_SCHEMA = vol.Schema({
 })
 
 
-def set_lights_xy(hass, lights, x_val, y_val, brightness):
+def set_lights_xy(hass, lights, x_val, y_val, brightness, transition):
     """Set color of array of lights."""
     for light in lights:
         if is_on(hass, light):
             turn_on(hass, light,
                     xy_color=[x_val, y_val],
                     brightness=brightness,
-                    transition=30)
+                    transition=transition)
 
 
-def set_lights_temp(hass, lights, mired, brightness):
+def set_lights_temp(hass, lights, mired, brightness, transition):
     """Set color of array of lights."""
     for light in lights:
         if is_on(hass, light):
             turn_on(hass, light,
                     color_temp=int(mired),
                     brightness=brightness,
-                    transition=30)
+                    transition=transition)
 
 
 # pylint: disable=unused-argument
@@ -101,7 +101,12 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         """Update lights."""
         flux.flux_update()
 
+    def fast_update(call=None):
+        """Update lights quickly/"""
+        flux.flux_update(fast=True)
+
     hass.services.register(DOMAIN, name + '_update', update)
+    hass.services.register(DOMAIN, name + 'fast_update', fast_update)
 
 
 class FluxSwitch(SwitchDevice):
@@ -153,8 +158,12 @@ class FluxSwitch(SwitchDevice):
         self._state = False
         self.schedule_update_ha_state()
 
-    def flux_update(self, now=None):
+    def flux_update(self, now=None, fast=False):
         """Update all the lights using flux."""
+        transition = 30
+        if fast:
+            transition = 5
+
         if now is None:
             now = dt_now()
         sunset = next_setting(self.hass, SUN).replace(day=now.day,
@@ -200,7 +209,7 @@ class FluxSwitch(SwitchDevice):
             brightness = None
         if self._mode == MODE_XY:
             set_lights_xy(self.hass, self._lights, x_val,
-                          y_val, brightness)
+                          y_val, brightness, transition)
             _LOGGER.info("Lights updated to x:%s y:%s brightness:%s, %s%%"
                          " of %s cycle complete at %s", x_val, y_val,
                          brightness, round(
@@ -209,7 +218,7 @@ class FluxSwitch(SwitchDevice):
             # Convert to mired and clamp to allowed values
             mired = color_temperature_kelvin_to_mired(temp)
             mired = max(HASS_COLOR_MIN, min(mired, HASS_COLOR_MAX))
-            set_lights_temp(self.hass, self._lights, mired, brightness)
+            set_lights_temp(self.hass, self._lights, mired, brightness, transition)
             _LOGGER.info("Lights updated to mired:%s brightness:%s, %s%%"
                          " of %s cycle complete at %s", mired, brightness,
                          round(percentage_complete * 100), time_state, now)
