@@ -119,8 +119,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 
     service_name = slugify("{} {}".format(name, 'update'))
     hass.services.register(DOMAIN, service_name, update)
-    service_name2 = slugify("{} {}", format(name, 'fast_update'))
-    hass.services.register(DOMAIN, service_name2, fast_update)
+    # service_name2 = slugify("{} {}", format(name, 'fast_update'))
+    hass.services.register(DOMAIN, name + '_fast_update', fast_update)
 
 
 class FluxSwitch(SwitchDevice):
